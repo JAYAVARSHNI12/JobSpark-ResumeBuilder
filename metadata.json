@@ -1,0 +1,6 @@
+{
+  "name": "JobSpark Resume Builder",
+  "description": "An interactive, visually stunning resume builder featuring professional templates, automatic live previews, custom layouts, PDF downloading, and user dashboard management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

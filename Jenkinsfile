@@ -27,7 +27,6 @@ pipeline {
                 bat """
                     docker login -u jayavarshni -p dckr_pat_FRveGQDXSYfUpoEvgMOs2_XtWNo ${REGISTRY}
                     docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push ${REGISTRY}/${IMAGE_NAME}:latest
                 """
             }
         }

@@ -2,11 +2,15 @@ pipeline {
     agent any
 
     environment {
-        // Define your container registry and image tag
-        REGISTRY = 'your-docker-registry.io'   // e.g. docker.io/myusername
-        IMAGE_NAME = 'jobspark-resume-builder'
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
-        FULL_IMAGE = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+        // ==============================================
+        // UPDATE THESE VALUES FOR YOUR OWN REGISTRY/SERVER
+        // ==============================================
+        REGISTRY      = 'docker.io/jayavarshni'   // Change this!
+        IMAGE_NAME    = 'jobspark-resume-builder'
+        IMAGE_TAG     = "${env.BUILD_NUMBER}"
+        DEPLOY_SERVER = 'your-server-ip'           // Optional: change or remove
+        DEPLOY_USER   = 'deployer'                 // Optional
+        DEPLOY_PORT   = '8080'
     }
 
     stages {
@@ -19,7 +23,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${FULL_IMAGE}", ".")
+                    docker.build("${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}", ".")
                 }
             }
         }
@@ -28,38 +32,24 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry("https://${REGISTRY}", 'docker-credentials-id') {
-                        docker.image("${FULL_IMAGE}").push()
-                        // Also tag as 'latest' if desired
-                        docker.image("${FULL_IMAGE}").push('latest')
+                        docker.image("${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}").push()
+                        docker.image("${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}").push('latest')
                     }
                 }
             }
         }
 
-        stage('Deploy') {
-            when {
-                branch 'main'   // or 'master' – deploy only from main branch
-            }
-            steps {
-                script {
-                    // Example: deploy to Kubernetes, ECS, or via SSH
-                    sh """
-                        ssh user@your-server "docker pull ${FULL_IMAGE} && docker stop jobspark || true && docker rm jobspark || true && docker run -d --name jobspark -p 8080:80 ${FULL_IMAGE}"
-                    """
-                }
-            }
-        }
     }
 
     post {
+        always {
+            cleanWs()
+        }
         success {
-            echo "Build and deployment succeeded! Image: ${FULL_IMAGE}"
-            // Optionally send Slack notification
-            // slackSend channel: '#ci-cd', color: 'good', message: "JobSpark build ${env.BUILD_NUMBER} succeeded."
+            echo "Pipeline succeeded! Image: ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
         }
         failure {
             echo "Pipeline failed."
-            // slackSend channel: '#ci-cd', color: 'danger', message: "JobSpark build ${env.BUILD_NUMBER} failed."
         }
     }
 }

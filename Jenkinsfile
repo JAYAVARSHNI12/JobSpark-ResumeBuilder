@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY   = 'docker.io/yourusername'   // CHANGE THIS
+        REGISTRY   = 'docker.io/jayavarshni'   // CHANGE THIS
         IMAGE_NAME = 'jobspark-resume-builder'
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
     }
@@ -25,7 +25,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 bat """
-                    docker login -u yourusername -p yourpassword ${REGISTRY}
+                    docker login -u jayavarshni -p dckr_pat_FRveGQDXSYfUpoEvgMOs2_XtWNo ${REGISTRY}
                     docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
                     docker push ${REGISTRY}/${IMAGE_NAME}:latest
                 """

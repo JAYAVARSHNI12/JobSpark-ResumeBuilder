@@ -16,27 +16,26 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}", ".")
-                }
+                bat """
+                    docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+                """
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry("https://${REGISTRY}", 'docker-credentials-id') {
-                        docker.image("${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}").push()
-                        docker.image("${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}").push('latest')
-                    }
-                }
+                bat """
+                    docker login -u yourusername -p yourpassword ${REGISTRY}
+                    docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                    docker push ${REGISTRY}/${IMAGE_NAME}:latest
+                """
             }
         }
     }
 
     post {
         success {
-            echo "Pipeline succeeded! Image: ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+            echo "Pipeline succeeded!"
         }
         failure {
             echo "Pipeline failed."

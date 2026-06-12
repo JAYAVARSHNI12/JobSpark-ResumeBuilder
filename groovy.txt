@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define your container registry and image tag
+        REGISTRY = 'your-docker-registry.io'   // e.g. docker.io/myusername
+        IMAGE_NAME = 'jobspark-resume-builder'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        FULL_IMAGE = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${FULL_IMAGE}", ".")
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry("https://${REGISTRY}", 'docker-credentials-id') {
+                        docker.image("${FULL_IMAGE}").push()
+                        // Also tag as 'latest' if desired
+                        docker.image("${FULL_IMAGE}").push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                branch 'main'   // or 'master' – deploy only from main branch
+            }
+            steps {
+                script {
+                    // Example: deploy to Kubernetes, ECS, or via SSH
+                    sh """
+                        ssh user@your-server "docker pull ${FULL_IMAGE} && docker stop jobspark || true && docker rm jobspark || true && docker run -d --name jobspark -p 8080:80 ${FULL_IMAGE}"
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build and deployment succeeded! Image: ${FULL_IMAGE}"
+            // Optionally send Slack notification
+            // slackSend channel: '#ci-cd', color: 'good', message: "JobSpark build ${env.BUILD_NUMBER} succeeded."
+        }
+        failure {
+            echo "Pipeline failed."
+            // slackSend channel: '#ci-cd', color: 'danger', message: "JobSpark build ${env.BUILD_NUMBER} failed."
+        }
+    }
+}
